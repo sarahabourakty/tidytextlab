@@ -1,0 +1,245 @@
+---
+title: "text_lab"
+author: "Brian Wright"
+date: "9/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(tidyverse)
+install.packages("tidytext")
+library(tidytext)
+install.packages("ggwordcloud")
+library(ggwordcloud)
+install.packages("gutenbergr") 
+library(gutenbergr)
+install.packages('textdata')
+library(textdata)
+#setwd("/cloud/project/tidytextlab")
+#save.image("tidytext.RData")
+
+```
+
+```{r}
+library(striprtf)
+## California articles
+California1<-read_rtf('California1.RTF') # read the file
+California1<-tibble(California1) # convert it to a table
+# this chunk separates the document by words and counts the instances of each word
+California1 <- California1 %>%
+  unnest_tokens(word, California1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+## Second California article
+California2<-read_rtf('California2.RTF') # read the file
+California2<-tibble(California2) # convert it to a table
+# this chunk separates the document by words and counts the instances of each word
+California2 <- California2 %>%
+  unnest_tokens(word, California2)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+# Combine the California datasets
+California<-rbind(California1,California2)
+California <- California[-grep('^\\d+$', California$word),]
+```
+
+```{r}
+## Washington articles (Specifically Seattle)
+Seattle1<-read_rtf('Seattle1.RTF') # read the file
+Seattle1<-tibble(Seattle1) # convert it to a table
+# this chunk separates the document by words and counts the instances of each word
+Seattle1 <- Seattle1 %>%
+  unnest_tokens(word, Seattle1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+## Washington articles (Specifically Seattle)
+Seattle2<-read_rtf('Seattle2.RTF') # read the file
+Seattle2<-tibble(Seattle2) # convert it to a table
+# this chunk separates the document by words and counts the instances of each word
+Seattle2 <- Seattle2 %>%
+  unnest_tokens(word, Seattle2)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+
+# Combine the Seattle datasets
+Seattle<-rbind(Seattle1,Seattle2)
+Seattle<- Seattle[-grep('^\\d+$', Seattle$word),]
+```
+
+```{r}
+## Oregon articles 
+Oregon<-read_rtf('Oregon1.RTF') # read the file
+Oregon<-tibble(Oregon) # convert it to a table
+# this chunk separates the document by words and counts the instances of each word
+Oregon <- Oregon %>%
+  unnest_tokens(word, Oregon)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+Oregon<- Oregon[-grep('^\\d+$', Oregon$word),]
+```
+
+```{r}
+## Starting sentiment analysis 
+get_sentiments('afinn')
+get_sentiments('nrc')
+get_sentiments('bing')
+```
+
+```{r}
+## California  sentiment analysis
+california_sent_affin <- California%>%
+  inner_join(get_sentiments("afinn"))
+
+california_sent_nrc <- California%>%
+  inner_join(get_sentiments("nrc"))
+
+california_sent_bing <- California%>%
+  inner_join(get_sentiments("bing"))
+```
+
+```{r}
+## Seattle  sentiment analysis
+seattle_sent_affin <- Seattle%>%
+  inner_join(get_sentiments("afinn"))
+
+seattle_sent_nrc <- Seattle%>%
+  inner_join(get_sentiments("nrc"))
+
+seattle_sent_bing <- Seattle%>%
+  inner_join(get_sentiments("bing"))
+```
+
+
+```{r}
+## Oregon 1 sentiment analysis
+oregon_sent_affin <- Oregon%>%
+  inner_join(get_sentiments("afinn"))
+
+oregon_sent_nrc <- Oregon%>%
+  inner_join(get_sentiments("nrc"))
+
+oregon_sent_bing <- Oregon%>%
+  inner_join(get_sentiments("bing"))
+```
+
+```{r}
+table(california_sent_bing$sentiment)
+table(oregon_sent_bing$sentiment)
+table(seattle_sent_bing$sentiment)
+
+table(california_sent_nrc$sentiment)
+table(oregon_sent_nrc$sentiment)
+table(seattle_sent_nrc$sentiment)
+
+ggplot(data = california_sent_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill = "orange")+
+  ggtitle("California Sentiment Range")+
+  theme_minimal()
+
+
+ggplot(data = seattle_sent_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill = "blue")+
+  ggtitle("Seattle Sentiment Range")+
+  theme_minimal()
+
+
+ggplot(data = oregon_sent_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill = "pink")+
+  ggtitle("Oregon Sentiment Range")+
+  theme_minimal()
+```
+
+```{r}
+set.seed(42)
+
+ggplot(California[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+
+ggplot(Seattle[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+ggplot(Oregon[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+```
+
+```{r}
+#Obtaining words only for each dataset
+California_1<-as_tibble(read_rtf('California1.RTF'))
+California_2<-as_tibble(read_rtf('California2.RTF'))
+Seattle_1<-as_tibble(read_rtf('Seattle1.RTF'))
+Seattle_2<-as_tibble(read_rtf('Seattle2.RTF'))
+Oregon_1<-as_tibble(read_rtf('Oregon1.RTF'))
+
+data_prep <- function(x,y,z){
+  i <- as_tibble(t(x))
+  ii <- unite(i,"text",y:z,remove = TRUE,sep = "")
+    
+}
+
+calif_1_bag <- data_prep(California_1[31:54,],'V1','V24')
+  
+
+calif_2_bag <- data_prep(California_2[28:50,],'V1','V23')
+
+seattle_1_bag <- data_prep(Seattle_1[31:54,],'V1','V24')
+
+seattle_2_bag <- data_prep(Seattle_2[31:45,],'V1','V15')
+
+oregon_1_bag <- data_prep(Oregon_1[30:47,],'V1','V18')
+
+
+
+
+
+west_coast<- c("California1","California2","Washington1","Washington2","Oregon")
+tf_idf_text <- tibble(west_coast,text=t(tibble(calif_1_bag,calif_2_bag,seattle_1_bag,seattle_2_bag,oregon_1_bag,.name_repair = "universal")))
+
+class(tf_idf_text)
+word_count <- tf_idf_text %>%
+  unnest_tokens(word, text) %>%
+  count(west_coast, word, sort = TRUE)
+
+
+total_words <- word_count %>% 
+  group_by(west_coast) %>% 
+  summarize(total = sum(n))
+
+DS_words <- left_join(word_count, total_words)
+
+#View(DS_words)
+
+DS_words <- DS_words %>%
+  bind_tf_idf(word, west_coast, n)
+states_words_filtered = DS_words%>%
+  filter(tf_idf>0.01)
+head(states_words_filtered,10)
+
+```
+
+```{r}
+
+```
+
