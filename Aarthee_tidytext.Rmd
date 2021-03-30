@@ -1,0 +1,254 @@
+---
+title: "Tidytext"
+author: "Brian Wright"
+date: "3/23/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+ 
+```{r}
+library(tidyverse)
+#install.packages("tidytext")
+library(tidytext)
+#install.packages("ggwordcloud")
+library(ggwordcloud)
+#install.packages("gutenbergr") 
+library(gutenbergr)
+#install.packages('textdata')
+library(textdata)
+library(RColorBrewer)
+```
+
+```{r}
+library(striprtf)
+Seatle1 = read_rtf("Seatle1.RTF")
+Seatle1 = tibble(Seatle1)
+
+Seatle1$Seatle1 <- as.character(Seatle1$Seatle1)
+
+Seatle1 <- Seatle1 %>%
+  unnest_tokens(word, Seatle1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+library(striprtf)
+Seatle2 = read_rtf("Seatle2.RTF")
+Seatle2 = tibble(Seatle2)
+
+Seatle2$Seatle2 <- as.character(Seatle2$Seatle2)
+
+Seatle2 <- Seatle2 %>%
+  unnest_tokens(word, Seatle2)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+library(striprtf)
+Oregon1 = read_rtf("Oregon1.RTF")
+Oregon1 = tibble(Oregon1)
+
+Oregon1$Oregon1 <- as.character(Oregon1$Oregon1)
+
+Oregon1 <- Oregon1 %>%
+  unnest_tokens(word, Oregon1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+library(striprtf)
+California1 = read_rtf("California1.RTF")
+California1 = tibble(California1)
+
+California1$California1 <- as.character(California1$California1)
+
+California1 <- California1 %>%
+  unnest_tokens(word, California1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+library(striprtf)
+California2 = read_rtf("California2.RTF")
+California2 = tibble(California2)
+
+California2$California2 <- as.character(California2$California2)
+
+California2 <- California2 %>%
+  unnest_tokens(word, California2)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+```
+
+```{r}
+California = rbind(California1, California2)
+Seatle = rbind(Seatle1, Seatle2)
+
+California = California[-grep('^\\d+$', California$word),]
+Oregon1 = Oregon1[-grep('^\\d+$', Oregon1$word),]
+Seatle = Seatle[-grep('^\\d+$', Seatle$word),]
+```
+
+```{r}
+get_sentiments('afinn')# we see a list of words and there classification, 2,467 - not really that many overall. 
+
+get_sentiments('nrc')# looks like a good amount more 13,891, but as we can see words are classified in several different categories. 
+
+get_sentiments('bing')# looks like a good amount more 6,776, but as we can see just negative and positive. 
+```
+
+```{r}
+seatle_sentiment_affin <- Seatle %>%
+  inner_join(get_sentiments("afinn"))#using a inner join to match words and add the sentiment variable
+
+seatle_sentiment_nrc <- Seatle%>%
+  inner_join(get_sentiments("nrc"))
+
+seatle_sentiment_bing <- Seatle %>%
+  inner_join(get_sentiments("bing"))
+```
+
+```{r}
+#again for Biden
+oregon1_sentiment_afinn <- Oregon1 %>%
+  inner_join(get_sentiments("afinn"))
+  
+oregon1_sentiment_nrc <- Oregon1 %>%
+  inner_join(get_sentiments("nrc"))
+
+oregon1_sentiment_bing <- Oregon1 %>%
+  inner_join(get_sentiments("bing"))
+```
+
+```{r}
+#again for Biden
+california_sentiment_afinn <- California %>%
+  inner_join(get_sentiments("afinn"))
+  
+california_sentiment_nrc <- California %>%
+  inner_join(get_sentiments("nrc"))
+
+california_sentiment_bing <- California %>%
+  inner_join(get_sentiments("bing"))
+```
+
+```{r, echo = FALSE, warning = FALSE}
+table(seatle_sentiment_bing$sentiment)
+table(oregon1_sentiment_bing$sentiment)
+table(california_sentiment_bing$sentiment)
+
+table(seatle_sentiment_nrc$sentiment)
+table(oregon1_sentiment_nrc$sentiment)
+table(california_sentiment_nrc$sentiment)
+
+ggplot(data = seatle_sentiment_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill = "blue")+
+  ggtitle("Seatle Sentiment Range")+
+  theme_gray()
+
+
+ggplot(data = california_sentiment_afinn, 
+       aes(x=value)
+        )+
+  geom_histogram(fill = "orange")+
+  ggtitle("california Sentiment Range")+
+  theme_minimal()
+
+
+ggplot(data = oregon1_sentiment_afinn, 
+       aes(x=value)
+        )+
+  geom_histogram(fill = "pink")+
+  ggtitle("oregon Sentiment Range")+
+  theme_minimal()
+```
+
+
+```{r}
+set.seed(42)
+ggplot(Seatle[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+ggplot(Oregon1[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+ggplot(California[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+```
+
+
+```{r}
+#need to the raw data again
+
+seatle1 = as.tibble(read_rtf("Seatle1.RTF"))
+seatle2 = as.tibble(read_rtf("Seatle2.RTF"))
+california1 = as.tibble(read_rtf("California1.RTF"))
+california2 = as.tibble(read_rtf("California2.RTF"))
+oregon = as.tibble(read_rtf("Oregon1.RTF"))
+
+data_prep <- function(x,y,z){
+  i <- as_tibble(t(x))
+  ii <- unite(i,"text",y:z,remove = TRUE,sep = "")
+}
+
+seatle1_bag <- data_prep(seatle1[31:54, ],'V1','V24')
+
+seatle2_bag <- data_prep(seatle2[31:45, ],'V1','V15')
+
+california1_bag <- data_prep(california1[31:54, ],'V1','V24')
+
+california2_bag <- data_prep(california2[28:50,], 'V1','V23')
+
+oregon_bag =  data_prep(oregon[30:47, ],'V1','V18')
+
+states = c("California1", "California2", "Oregon", "Seatle1", "Seatle2")
+
+tf_idf_text <- tibble(states, text=t(tibble(seatle1_bag, seatle2_bag, california1_bag, california2_bag, oregon_bag,.name_repair = "universal")))
+
+class(tf_idf_text)
+
+word_count <- tf_idf_text %>%
+  unnest_tokens(word, text) %>%
+  count(states, word, sort = TRUE)
+
+
+total_words <- word_count %>% 
+  group_by(states) %>% 
+  summarize(total = sum(n))
+
+states_words <- left_join(word_count, total_words)
+
+states_words <- states_words %>%
+  bind_tf_idf(word, states, n)
+
+```
+
+```{r}
+states_words_filtered = states_words%>%
+  filter(tf_idf>0.01)%>%
+  order(tf_idf)
+
+head(sort(states_words_filtered), 5)
+```
+
+
+
+
