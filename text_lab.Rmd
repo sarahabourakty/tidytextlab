@@ -1,15 +1,21 @@
 ---
-title: "text_lab"
-author: "Brian Wright"
-date: "9/30/2020"
-output: html_document
+title: "West Coast Data Science Analysis"
+author: "Sarah Abourakty, Aarthee Baskaran, Shipra Trivedi"
+date: "3/29/2021"
+output:
+  html_document:         
+    toc: TRUE
+    theme: cerulean
+    toc_float: TRUE
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-```{r}
+```{r, echo=FALSE, include=FALSE}
 library(tidyverse)
 #install.packages("tidytext")
 library(tidytext)
@@ -19,45 +25,270 @@ install.packages("gutenbergr")
 library(gutenbergr)
 #install.packages('textdata')
 library(textdata)
-setwd("/cloud/project/tidytext")
-save.image("tidytext.RData")
+#setwd("/cloud/project/tidytextlab")
+#save.image("tidytext.RData")
+install.packages("striprtf") 
+library(striprtf)
+
+```
+
+## Introduction
+
+To analyze data science sentiment, our team has chosen to focus in on the West Coast, specifically California, Oregon, and Washington state. The Los Angeles Times and USAtoday were selected from each state to analyze their sentiments towards data science. We chose to analyze the West Coast due to the large tech influence in the area, ranging from Silicon Valley in California, to major corporations such as Google and Amazon in Seattle. Below, we discuss the trends we found between each state and periodical.
+
+
+```{r, echo=FALSE, include=FALSE}
+# Loading and stripping all data
+
+seattle1 <- read_rtf('seattle1.RTF') 
+seattle1 <- tibble(seattle1)
+seattle1$seattle1 <- as.character(seattle1$seattle1)
+seattle1 <- seattle1 %>%
+  unnest_tokens(word, seattle1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+
+seattle2 <- read_rtf('seattle2.RTF') 
+seattle2 <- tibble(seattle2)
+seattle2$seattle2 <- as.character(seattle2$seattle2)
+seattle2 <- seattle2 %>%
+  unnest_tokens(word, seattle2)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+
+# Joining seattle
+seattle <- rbind(seattle1, seattle2)  
+seattle = seattle[-grep('^\\d+$', seattle$word),]
+
+
+oregon <- read_rtf('oregon1.RTF') 
+oregon <- tibble(oregon)
+oregon$oregon <- as.character(oregon$oregon)
+oregon <- oregon %>%
+  unnest_tokens(word, oregon)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+
+oregon = oregon[-grep('^\\d+$', oregon$word),]
+
+
+california1 <- read_rtf('california1.RTF') 
+california1 <- tibble(california1)
+california1$california1 <- as.character(california1$california1)
+california1 <- california1 %>%
+  unnest_tokens(word, california1)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+
+california2 <- read_rtf('california2.RTF') 
+california2 <- tibble(california2)
+california2$california2 <- as.character(california2$california2)
+california2 <- california2 %>%
+  unnest_tokens(word, california2)%>%
+  anti_join(stop_words)%>% 
+  count(word, sort=TRUE)
+
+california <- rbind(california1, california2)
+california = california[-grep('^\\d+$', california$word),]
+
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+get_sentiments('afinn')
+get_sentiments('nrc')
+get_sentiments('bing')
+
+#Seattle
+seattle_sentiment_affin <- seattle %>%
+  inner_join(get_sentiments("afinn"))#using a inner join to match words and add the sentiment variable
+
+seattle_sentiment_nrc <- seattle %>%
+  inner_join(get_sentiments("nrc"))
+
+seattle_sentiment_bing <- seattle %>%
+  inner_join(get_sentiments("bing"))
+
+
+#Oregon
+oregon_sentiment_affin <- oregon %>%
+  inner_join(get_sentiments("afinn"))#using a inner join to match words and add the sentiment variable
+
+oregon_sentiment_nrc <- oregon %>%
+  inner_join(get_sentiments("nrc"))
+
+oregon_sentiment_bing <- oregon %>%
+  inner_join(get_sentiments("bing"))
+
+
+#California
+california_sentiment_affin <- california %>%
+  inner_join(get_sentiments("afinn"))#using a inner join to match words and add the sentiment variable
+
+california_sentiment_nrc <- california %>%
+  inner_join(get_sentiments("nrc"))
+
+california_sentiment_bing <- california %>%
+  inner_join(get_sentiments("bing"))
+
+```
+
+
+## Washington 
+
+Our first sentiment analysis is for Washington state. Most articles revolved around Seattle, which was expected due to the location of the large tech companies. 
+```{r}
+table(seattle_sentiment_bing$sentiment)
+table(seattle_sentiment_nrc$sentiment)
+
+```
+Overall, a generally positive sentiment was expressed for Washington, with an emphasis on joy and trust, showing how they are comfortable with data science as a part of their daily industry. Anticipation was also a strongly expressed sentiment; this could be explained as excitement for new breakthroughs in the data science industry. The sentiment range was stronger in the positvely correlated region, as shown in the plot below.
+
+
+```{r, warning=FALSE, echo=FALSE}
+#Seattle ggplot
+ggplot(data = seattle_sentiment_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill="blue")+
+  ggtitle("Washington Sentiment Range")+
+  theme_linedraw()
+
+```
+
+Common words expressed from Washington included: listings, labor, job, etc. A lot of the words emphasized an industrialized, working environment, showing a focus on the physical job and labor element of data science. This can be explained by the growing presence of corporations.
+
+```{r}
+ggplot(seattle[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+```
+
+
+## Oregon
+
+Next, we analyzed Oregon sentiment. In Portland, Oregon, a rapidly growing community is known as the "Silicon Forest", with a cluster of high-tech companies in the metropolitan area. Since this area is still developing, we wanted to closely monitor the sentiment to predict the future of the area.
+
+Sentiment in Oregon appeared to be evenly distributed between positive and negative words, with anger and fear being strongly expressed sentiments. 
+```{r}
+table(oregon_sentiment_bing$sentiment)
+table(oregon_sentiment_nrc$sentiment)
+
+```
+
+Despite this, further sentiment analysis has revealed a relatively more positive sway. Still, Oregon expresses a more negative sentiment than Washington.
+```{r, warning=FALSE}
+ggplot(data = oregon_sentiment_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill='pink')+
+  ggtitle("Oregon Sentiment Range")+
+  theme_linedraw()
+```
+
+
+Word frequencies revealed an interesting and unexpected trend in Oregon. Large societal words such as crime, hate, and police have appeared, indicating that data science in that area may be focused on crime analysis due to Oregons higher crime occurrences. 
+```{r}
+ggplot(oregon[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+```
+
+
+## California
+
+Finally, we took a look at California sentiment. An overly positive sentiment was received, with over double of the words being positive. Anticipation and trust were observed as sentiments, which was similar to what we observed in Washington. This can be explained by the presence of Silicon Valley and the large amount of tech innovation in the area. 
+```{r}
+table(california_sentiment_bing$sentiment)
+table(california_sentiment_nrc$sentiment)
+
+```
+
+California expressed a stronger positive sentiment than the other states on the west coast.
+```{r, warning=FALSE}
+ggplot(data = california_sentiment_affin, 
+       aes(x=value)
+        )+
+  geom_histogram(fill="orange")+
+  ggtitle("California Sentiment Range")+
+  theme_linedraw()
+```
+
+Analysis of the word cloud revealed a focus on innovative words, such as science, computer, data, as well as more societal terms such as underrepresented, communities, diversity. This indicates a focus on creating diversity within the workplace and community.
+```{r, echo=FALSE}
+ggplot(california[1:50,], aes(label = word, size = n)
+       ) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+```
+
+## tf_idf Analysis
+
+tf_idf analysis was used to identify the most common words present, as well as their relevance. Below are the most commonly used, as well as the most relevant words present from each newspaper from each state. 
+
+Washington: listings, Amazon, job, Microsoft, openings
+Oregon: hate, crime, social, police, identity
+California: Women, black, opportunities, mentoring, computer
+
+As supported by our analysis above, sentiment seemed to be the highest in California, followed by Washington, then Oregon. 
+In California, the emphasis seemed to be focused on underrepresented communities and promoting growth within data science. In Oregon, a strong negative connotation surrounding crime seemed to be a recurring theme. In Washington, a corporate presence with a focus on jobs prevailed. 
+
+A stronger sentiment was expressed by the LA Times as compared to USA today. This might be attributed to the fact that the LA Times is a more local publication to the West Coast, which will have a more in-depth focus on its industries. USA today is a national newspaper might have chosen to reduce focus on developments in data science and focus more on the negative aspects.
+
+More information would be needed regarding current job openings and employment rates in data science to further understand whether unemployment may affect how the sentiments differ across the West Coast. It would also be useful to gain data on what type of data science jobs are being offered in Oregon. 
+
+Based on the information above, We would suggest presenting more information about data science to educate and promote data science, especially within the Silicon Forest and surrounding neighborhoods. We would also suggest a greater outreach from the corporations in Seattle to the developing communities in Portland, Oregon. Communication across the West Coast could improve sentiment surrounding data science. 
+
+
+```{r, echo=FALSE, include=FALSE}
+
+seattle1_raw <- as_tibble(read_rtf('seattle1.RTF'))
+seattle2_raw <- as_tibble(read_rtf('seattle2.RTF'))
+oregon_raw <- as_tibble(read_rtf('oregon1.RTF'))
+california1_raw <- as_tibble(read_rtf('california1.RTF'))
+calirofnia2_raw <- as_tibble(read_rtf('california2.RTF'))
+
+data_prep <- function(x,y,z){
+  i <- as_tibble(t(x))
+  ii <- unite(i,"text",y:z,remove = TRUE,sep = "")
+}
+
+seattle1_bag <- data_prep(seattle1_raw[31:54,],'V1','V24')
+seattle2_bag <- data_prep(seattle2_raw[31:45,],'V1','V15')
+oreagon1_bag <- data_prep(oregon_raw[30:47,],'V1','V18')
+california1_bag <- data_prep(california1_raw[31:54,],'V1','V24')
+california2_bag <- data_prep(calirofnia2_raw[28:50,],'V1','V23')
+
+
+westcoast <- c("Seattle", "Seattle","Oregon","California", "California")
+tf_idf_text <- tibble(westcoast,text=t(tibble(seattle1_bag,seattle2_bag,oreagon1_bag,california1_bag,
+                                              california2_bag,.name_repair = "universal")))
+class(tf_idf_text)
+
+word_count <- tf_idf_text %>%
+  unnest_tokens(word, text) %>%
+  count(westcoast, word, sort = TRUE)
+
+total_words <- word_count %>% 
+  group_by(westcoast) %>% 
+  summarize(total = sum(n))
+
+state_words <- left_join(word_count, total_words)
+
+
+state_words <- state_words %>%
+  bind_tf_idf(word, westcoast, n)
+
+
+states_words_filtered = state_words%>%
+  filter(tf_idf>0.01)
+#head(states_words_filtered,19)
+
 
 ```
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Congratulations you've successfully transferred from being a NBA 'quant' scout to a consultant specializing in US national sentiment! You've been hired by a non-profit in secret to track the level of support nationally and regionally for the field of Data Science. The goal is to get a general idea of patterns associated with articles being written on the broad topic of Data Science (you can also choose to select a sub-topic). In doing so your data science team has decided to explore periodicals from around the country in a effort to track the relative positive or negative sentiment and word frequencies. Luckily your team has access to a world class library search engine call LexusNexus (NexusUni) that provides access to newspapers from around the country dating back decades. You'll first need to decided what words you want to track and what time might be interesting to begin your search. 
-
-You'll need to select several newspapers from different regions in the country limiting the search to 100 articles from each paper, run sentiment analysis with each newspaper serving as a corpus and then compare the level of positive or negative connotation associated with the outcomes. Also, run tf-idf on each corpus (newspapers) and work to compare the differences between the distributions (5 to 6 newspapers should be fine)
-
-Your main goal (and the goal of all practicing data scientists!) is to translate this information into action. What patterns do you see, why do you believe this to be the case? What additional information might you want? Be as specific as possible, but keep in mind this is an initial exploratory effort...more analysis might be needed...but the result can and should advise the next steps you present to the firm. 
-
-
-Please submit a cleanly knitted HTML file describing in detail the steps you took along the way, the results of your analysis and most importantly the implications/next steps you would recommend.  You will report your final results and recommendations next week in class. This will be 5 minutes per group. 
-
-You will need also need to try to collaborate within your group via a GitHub repo, if you choose it would be fine to assign 1 or 2 regions/newspapers per group member, that can then be added to the repo. Create a main repo, everyone should work in this repo and submit independently using branching/pull requests. If you want to try to use pull request to combine everyone's work into a final project, please do so, but it's not a requirement. Select a repo owner that sets up access (push access) for the week, we will rotate owners next week. Also, submit a link to your the GitHub repo (every group member can submit the same link). 
-
-Create collaborations in GitHub: https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-collaborative-development-models
-
-Rstudio Guidance on Git and Github (Including Branching/Pull Requests): https://r-pkgs.org/git.html#git-branch
-
-
-Here is the link to the database search via the UVA Library that should lead you to LexusNexus (Now Nexas Uni)
-https://guides.lib.virginia.edu/az.php?a=l
